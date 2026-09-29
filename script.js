@@ -1,5 +1,6 @@
 // Paste your deployed Google Apps Script Web App URL here (see Code.gs)
-const API_URL="https://script.google.com/macros/s/AKfycbzSWHwbBOnI3AR5FEekT4Ri0lgW1vO8RqQgSnTGhnHQi-HyGgwXGbesXY5uomz5iqs/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbzpT3KTOUNpGUoVdQVk8wXmrUx5RRR_JYLZvxk3yV8fIbNtTHhzChRY_6jyZzD1jig0Zg/exec";
+const TRACK_VISITS=true;   // true = log a row when someone opens the site (once per browser session)
 const ADDRESS="Level 4, The Onyx Spire, Financial District", P="919382857246",$=s=>document.querySelector(s),ic=n=>`<svg class="i"><use href="#${n}"/></svg>`,wa=t=>`https://wa.me/${P}?text=${encodeURIComponent(t)}`;
 // letter split
 function split(el){let k=0;(function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType==3){const f=document.createDocumentFragment();c.textContent.split(/(\s+)/).forEach(t=>{if(!t.trim()){f.append(' ');return}const s=document.createElement('span');s.className='w';[...t].forEach(ch=>{const x=document.createElement('span');x.className='c';x.style.setProperty('--i',k++);x.textContent=ch;s.append(x)});f.append(s)});c.replaceWith(f)}else if(c.nodeType==1&&c.tagName!='BR')w(c)})})(el)}
@@ -28,7 +29,7 @@ function day(d){$('#rows').innerHTML=S[d].map((c,n)=>`<div class="card row" styl
 $('#days').onclick=e=>{const b=e.target.closest('.pill');if(!b)return;document.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));b.classList.add('on');day(b.dataset.d)};
 // tiers
 let yr=true;let T=[["CORE KINETIC","Essential Conditioning & Floor",2499,1999,"dumb",["Cardio & Sled Track","Free Weights & Dumbbells","Quarterly InBody Scan","Valet Parking & Towels"]],["TITAN ACCESS","Strength Platform Foundation",3999,3199,"bolt",["Olympic Barbell Arena","6 Cohort Classes / Month","Weekly Cedar Sauna","Monthly InBody 770 Scan"]],["ONYX ALL-ACCESS","The Club Standard",6499,5199,"crown",["Unlimited Group & Combat","Daily Cryo Plunge & Sauna","Monthly 1-on-1 Coach Review","Custom Nutrition Phasing","2 Guest Passes / Month"],1],["BLACK CLUB PRIVATE","Private Concierge & Coaching",12999,10399,"gem",["8 Private PT Sessions / Mo","Permanent Valet Locker","VO2 Max & Metabolic Testing","24/7 WhatsApp Concierge"]]];
-function tiers(){$('#tiers').innerHTML=T.map((t,i)=>{const p=yr?t[3]:t[2];return`<div class="card tier rv ${t[6]?'pop':''}" style="--dl:${i*.1}s">${t[6]?'<div class="ptag">Most Preferred</div>':''}<div><h3>${ic(t[4])}${t[0]}</h3><p class="sub">${t[1]}</p><div class="pr"><span class="pn">₹${p.toLocaleString('en-IN')}</span> <span class="ps">/ month</span></div><ul>${t[5].map(f=>`<li>${ic('check')}${f}</li>`).join('')}</ul></div><a class="btn ${t[6]?'gold':'wa'}" target="_blank" href="${wa(`Hi Kinetic Onyx, I want to join "${t[0]}" (${yr?'Annual':'Monthly'} at ₹${p.toLocaleString('en-IN')}/mo).`)}">${ic('chat')}Join via WhatsApp</a></div>`}).join('');watch()}
+function tiers(){$('#tiers').innerHTML=T.map((t,i)=>{const p=yr?t[3]:t[2];return`<div class="card tier rv ${t[6]?'pop':''}" style="--dl:${i*.1}s">${t[6]?'<div class="ptag">Most Preferred</div>':''}<div><h3>${ic(t[4])}${t[0]}</h3><p class="sub">${t[1]}</p><div class="pr"><span class="pn">₹${p.toLocaleString('en-IN')}</span> <span class="ps">/ month</span></div><ul>${t[5].map(f=>`<li>${ic('check')}${f}</li>`).join('')}</ul></div><a class="btn ${t[6]?'gold':'wa'}" target="_blank" href="${wa(`Hi Kinetic Onyx, I want to join "${t[0]}" (${yr?'Annual':'Monthly'} at ₹${p.toLocaleString('en-IN')}/mo).`)}">${ic('chat')}Join via WhatsApp</a></div>`}).join('');watch();fillPlans()}
 $('#bM').onclick=()=>{yr=false;$('#bM').classList.add('on');$('#bY').classList.remove('on');tiers()};$('#bY').onclick=()=>{yr=true;$('#bY').classList.add('on');$('#bM').classList.remove('on');tiers()};
 // instructors
 let C=[["Marcus Vance","Head of Human Performance & Strength","12+ Yrs","#7c2d12","dumb","Former collegiate strength director and CSCS specialist engineering progressive overload.",["Olympic Lifting","Powerlifting PR","Biomechanics"]],["Elena Rostova","Director of Conditioning & Movement","9+ Yrs","#134e4a","flame","Elite hybrid endurance athlete and EXOS specialist building anaerobic threshold engines.",["Hyrox Prep","Lactate Threshold","Engine Building"]],["Seraphina Lin","Lead Mobility & Spinal Longevity","8+ Yrs","#4c1d95","pulse","Classical reformer pilates plus functional range conditioning for heavy lifters.",["Spine Decompression","Hip Mobility","Balance"]],["Dr. Adrian Cross","Director of Sports Physiology & Recovery","11+ Yrs","#1e3a8a","snow","Doctor of Physical Therapy and Olympic recovery consultant in contrast thermal work.",["Contrast Hydro","HRV","VO2 Max"]]];
@@ -70,14 +71,51 @@ async function loadSheet(){
     watch();
   }catch(e){console.warn('Sheet load failed, using built-in data',e)}
 }
-// Log every WhatsApp booking / enquiry click as a lead row
-function track(type,message){
+
+// ===== Lead tracking =====
+// Sends one row to the Leads sheet: date/time are added by the server (India time).
+function track(type,message,extra={}){
   if(!/^https/.test(API_URL))return;
-  fetch(API_URL,{method:'POST',mode:'no-cors',keepalive:true,body:JSON.stringify({type,message,page:location.href})}).catch(()=>{});
+  fetch(API_URL,{method:'POST',mode:'no-cors',keepalive:true,body:JSON.stringify({type,message,page:location.href,...extra})}).catch(()=>{});
 }
+
+// 1) Every WhatsApp button click (booking / join / coach / etc.), with plan name when it's a "Join"
 document.addEventListener('click',e=>{
   const a=e.target.closest('a[href*="wa.me"]');if(!a)return;
   let m='';try{m=new URL(a.href).searchParams.get('text')||''}catch(_){}
   const t=/book a spot|want to book "/i.test(m)?'Class Booking':/join "/i.test(m)?'Membership':/1-on-1/i.test(m)?'Coach Session':/profile/i.test(m)?'Biometrics':/location/i.test(m)?'Directions':/trial|VIP/i.test(m)?'Trial Pass':'General';
-  track(t,m);
+  const pm=m.match(/join "([^"]+)"/i);
+  track(t,m,{plan:pm?pm[1]:''});
 });
+
+// 2) Anonymous visit (once per browser session)
+if(TRACK_VISITS){try{if(!sessionStorage.getItem('ko_v')){sessionStorage.setItem('ko_v','1');track('Visit','')}}catch(_){track('Visit','')}}
+
+// 3) "Request a Callback" form (name + phone + plan) - built here, no HTML changes needed
+function fillPlans(){
+  const s=document.getElementById('lfPlan');if(!s)return;
+  const cur=s.value;
+  s.innerHTML='<option value="Not sure yet">Not sure yet</option>'+T.map(t=>`<option value="${t[0]}">${t[0]}</option>`).join('');
+  if(cur)s.value=cur;
+}
+function mountLeadForm(){
+  if(document.getElementById('leadForm'))return;
+  const st=document.createElement('style');
+  st.textContent='#callback{max-width:520px;margin:80px auto;padding:0 20px}#callback h2{font-family:var(--font-display,inherit);text-transform:uppercase;margin-bottom:6px}#callback p.n{color:#9CA3AF;font-size:.9rem;margin-bottom:18px}#leadForm{display:grid;gap:12px}#leadForm input,#leadForm select{width:100%;padding:14px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0E1118;color:#F3F4F6;font:inherit}#leadForm input:focus,#leadForm select:focus{outline:none;border-color:#F59E0B}#leadForm button{padding:14px;border:0;border-radius:10px;background:linear-gradient(135deg,#FDE68A,#F59E0B,#D97706);color:#000;font-weight:800;text-transform:uppercase;letter-spacing:.05em;cursor:pointer}#leadForm button:disabled{opacity:.6}#lfMsg{min-height:1.4em;font-size:.9rem;color:#10B981}#lfMsg.err{color:#F87171}';
+  document.head.append(st);
+  const sec=document.createElement('section');sec.id='callback';
+  sec.innerHTML='<h2>Request a Callback</h2><p class="n">Leave your details and our concierge will contact you.</p><form id="leadForm" novalidate><input id="lfName" placeholder="Your name" autocomplete="name" maxlength="80" required><input id="lfPhone" placeholder="Phone number" inputmode="tel" autocomplete="tel" maxlength="20" required><select id="lfPlan"></select><button type="submit">Request Callback</button><div id="lfMsg" role="status"></div><p class="n" style="margin:0;font-size:.75rem">We use your details only to contact you about membership.</p></form>';
+  const f=document.querySelector('footer');f?f.before(sec):document.body.append(sec);
+  fillPlans();
+  document.getElementById('leadForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const name=$('#lfName').value.trim(),phone=$('#lfPhone').value.trim(),plan=$('#lfPlan').value,msg=$('#lfMsg');
+    if(name.length<2){msg.className='err';msg.textContent='Please enter your name.';return}
+    if(!/^\+?[\d\s-]{8,16}$/.test(phone)){msg.className='err';msg.textContent='Please enter a valid phone number.';return}
+    track('Form Enquiry','Callback request',{name,phone,plan});
+    msg.className='';msg.textContent='Thank you! We will contact you shortly.';
+    e.target.reset();fillPlans();
+    const b=e.target.querySelector('button');b.disabled=true;setTimeout(()=>b.disabled=false,4000);
+  });
+}
+mountLeadForm();
