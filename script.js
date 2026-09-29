@@ -1,5 +1,5 @@
 // Paste your deployed Google Apps Script Web App URL here (see Code.gs)
-const API_URL="https://script.google.com/macros/s/AKfycbz9PsexlzOyD-z4Ev5BdIxi83J3JD9Q1ef1Woc0sA5TSkQ0RodjsXerCpwouHzkk1c/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbzSWHwbBOnI3AR5FEekT4Ri0lgW1vO8RqQgSnTGhnHQi-HyGgwXGbesXY5uomz5iqs/exec";
 const ADDRESS="Level 4, The Onyx Spire, Financial District", P="919382857246",$=s=>document.querySelector(s),ic=n=>`<svg class="i"><use href="#${n}"/></svg>`,wa=t=>`https://wa.me/${P}?text=${encodeURIComponent(t)}`;
 // letter split
 function split(el){let k=0;(function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType==3){const f=document.createDocumentFragment();c.textContent.split(/(\s+)/).forEach(t=>{if(!t.trim()){f.append(' ');return}const s=document.createElement('span');s.className='w';[...t].forEach(ch=>{const x=document.createElement('span');x.className='c';x.style.setProperty('--i',k++);x.textContent=ch;s.append(x)});f.append(s)});c.replaceWith(f)}else if(c.nodeType==1&&c.tagName!='BR')w(c)})})(el)}
